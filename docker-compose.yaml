@@ -1,0 +1,52 @@
+services:
+  db:
+    image: mysql:5.7
+    container_name: buku-tamu-db
+    environment:
+      MYSQL_ROOT_PASSWORD: # tambahkan root password untuk keamanan
+      MYSQL_DATABASE: buku_tamu
+      MYSQL_USER: root
+      MYSQL_PASSWORD: # tambahkan password untuk user
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - buku-tamu-network
+    command: --innodb-force-recovery=6 # tambahkan opsi untuk pemulihan InnoDB jika ada masalah
+
+  # Backend API (Node.js + Express)
+  api:
+    build: ./api
+    container_name: buku-tamu-api
+    environment:
+      DB_HOST: db # Gunakan nama service (db) agar bisa diakses dari dalam container
+      DB_USER: root
+      DB_PASSWORD: admin
+      DB_NAME: buku_tamu
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    networks:
+      - buku-tamu-network
+
+  # Frontend (React.js)
+  frontend:
+    build: ./app
+    container_name: buku-tamu-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+    networks:
+      - buku-tamu-network
+
+# Volume untuk MySQL data persistence
+volumes:
+  db_data:
+
+    # Jaringan untuk semua service
+networks:
+  buku-tamu-network:
+    driver: bridge
